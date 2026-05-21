@@ -134,8 +134,8 @@ body{background:var(--bg);min-height:100vh;overflow-x:hidden;position:relative;}
 .rx-panel-hr{font-size:0.42rem;letter-spacing:0.1em;color:var(--w4)}
 .rx-main-row{padding:1.2rem 1.4rem 0.6rem}
 /* ⑤ 処方名は白のみ — 色なし */
-.rx-disp{display:flex;align-items:baseline;margin-bottom:0.8rem;}
-.rx-base{font-family:var(--mono);font-size:clamp(1.6rem,5.5vw,2.2rem);letter-spacing:0.22em;color:var(--w0);}
+.rx-disp{display:none;}
+.rx-base{display:none;}
 .rx-sep{font-size:0.9rem;color:var(--w3);margin:0 0.4rem;}
 .rx-time{font-family:var(--mono);font-size:clamp(1.6rem,5.5vw,2.2rem);letter-spacing:0.22em;color:var(--w1);}
 /* ⑧ 状態説明文 */
@@ -279,10 +279,10 @@ body{background:var(--bg);min-height:100vh;overflow-x:hidden;position:relative;}
           <span class="rx-panel-hr" id="rxTs">—</span>
         </div>
         <div class="rx-main-row">
-          <div class="rx-disp">
-            <span class="rx-base" id="rxBase">—</span>
-            <span class="rx-sep">｜</span>
-            <span class="rx-time" id="rxTime">—</span>
+          <div class="rx-action" id="rxAction">—</div>
+          <div class="rx-layer-line">
+            <span class="rx-layer-label">精神層：</span>
+            <span class="rx-layer-val" id="rxTime">—</span>
           </div>
           <div class="rx-status-desc" id="rxStatusDesc"></div>
           <div class="rx-status-time" id="rxStatusTime"></div>
@@ -347,41 +347,20 @@ var QS = [
 
 // ⑧ 状態説明データ
 var RX_DESC = {
-  shutdown: {
-    desc:"\u5185\u90e8\u4fe1\u53f7\u306e\u9077\u65ad\u3092\u691c\u51fa\u3002\u5916\u90e8\u63a5\u7d9a\u306e\u8ffd\u52a0\u9077\u65ad\u3092\u63a8\u5968\u3002",
-    note:""
-  },
-  shinnetsu: {
-    desc:"\u4f53\u6e29\u4e0b\u964d\u3001\u51fa\u529b\u4f4e\u4e0b\u3092\u691c\u51fa\u3002\u7de9\u3084\u304b\u306a\u518d\u52a0\u71b1\u3092\u6295\u4e0e\u3002",
-    note:""
-  },
-  iv: {
-    desc:"\u5185\u90e8\u904e\u8ca0\u8377\u3092\u691c\u51fa\u3002\u5165\u529b\u9077\u65ad\u307e\u305f\u306f\u5e0c\u91c8\u3092\u6295\u4e0e\u3002",
-    note:""
-  },
-  awake: {
-    desc:"\u899a\u9192\u50be\u5411\u3092\u691c\u51fa\u3002\u9310\u5316\u306b\u3088\u308b\u5883\u754c\u6574\u5099\u3092\u6295\u4e0e\u3002",
-    note:""
-  },
-  resonance: {
-    desc:"\u5171\u9cf4\u72b6\u614b\u3092\u691c\u51fa\u3002\u5bc6\u5ea6\u8abf\u6574\u85e5\u66f2\u3092\u6295\u4e0e\u3002",
-    note:""
-  },
-  anesthesia: {
-    desc:"\u611f\u899a\u4fe1\u53f7\u81b8\u5931\u3002\u9ebb\u9154\u6210\u5206\u3092\u542b\u3080\u85e5\u66f2\u3092\u6295\u4e0e\u3002",
-    note:""
-  },
-  acceptance: {
-    desc:"\u72b6\u614b\u306f\u5b89\u5b9a\u7bc4\u56f2\u5185\u3002\u53d7\u5bb9\u3092\u4fc3\u9032\u3059\u308b\u85e5\u66f2\u3092\u6295\u4e0e\u3002",
-    note:""
-  }
+  shutdown:   { action:"遷断処置を開始", desc:"内部信号の遷断を検出。外部接続の追加遷断を推奨。" },
+  shinnetsu:  { action:"沈熱処置を開始", desc:"体温降下を検出。緩やかな再加熱藥曲を投与。" },
+  iv:         { action:"点滴処置を開始", desc:"入力過負荷を検出。外部入力の遷断を推奨。" },
+  awake:      { action:"覚醒処置を開始", desc:"覚醒傾向を検出。境界線の維持を推奨。" },
+  resonance:  { action:"共鳴処置を開始", desc:"共鳴状態を検出。密度調整藥曲を投与。" },
+  anesthesia: { action:"麻酔処置を開始", desc:"感覚信号膸失。麻酔成分を含む藥曲を投与。" },
+  acceptance: { action:"受容処置を開始", desc:"状態は安定範囲内。受容を促進する藥曲を投与。" }
 };
 
 var TIME_DESC = {
-  midnight:"\u6df1\u591c\u5c64\uff1a\u601d\u8003\u304c\u6c88\u3080\u76f4\u524d\u306e\u72b6\u614b\u3002",
-  sunset:  "\u5915\u967d\u5c64\uff1a\u611f\u60c5\u306e\u76ee\u899a\u3081\u3001\u4f59\u97fb\u304c\u6b8b\u308b\u72b6\u614b\u3002",
-  sunrise: "\u671d\u65e5\u5c64\uff1a\u5916\u90e8\u3078\u306e\u518d\u63a5\u7d9a\u304c\u59cb\u307e\u308b\u72b6\u614b\u3002",
-  unknown: "\u6642\u9593\u5c64\u4e0d\u660e\u3002\u7279\u5b9a\u4e0d\u80fd\u3002"
+  midnight: "未明層へ沈降中。思考が沈む直前の状態。",
+  sunset:   "夕陽層へ沈降中。感情の目覚め、余韻が残る状態。",
+  sunrise:  "朝日層へ上昇中。外部への再接続が始まる状態。",
+  unknown:  "時間層不明。層特定不能。"
 };
 
 var TIME_RX = {
@@ -390,7 +369,7 @@ var TIME_RX = {
     archive:[mk("IV","\u547d\u65e5","https://youtu.be/P1lTV_yoqQA"),mk("V","Rain","https://youtu.be/qstUtvoAiQ0")],
     original:mk("","\u30bb\u30f2\u30cf\u30e4\u30df","https://youtu.be/NQP8MElABDE")},
   sunset:{ label:"\u5915\u967d",
-    primary:[mk("I","Hero","https://youtu.be/BmXNwpPR9S8"),mk("II","DINOSAUR","https://youtu.be/zAhMesIPXeg"),mk("III","Stellar Stellar","https://youtu.be/MbMbSwTzzI")],
+    primary:[mk("I","Hero","https://youtu.be/BmXNwpPR9S8"),mk("II","DINOSAUR","https://youtu.be/zAhMesIPXeg"),mk("III","Stellar Stellar","https://youtu.be/MbMbSwT--zI")],
     archive:[mk("IV","\u604b\u98a8\u90aa\u306b\u306e\u305b\u3066","https://youtu.be/CTWFTgyZC1g"),mk("V","\u6b4c\u3088","https://youtu.be/6jVsxva-G2c")],
     original:mk("","\u30c4\u30ad\u30df\u30ec\u30d0","https://youtu.be/1M2yHWtrGtM")},
   sunrise:{ label:"\u671d\u65e5",
@@ -542,8 +521,12 @@ function preResult(){
 
 function getYTId(url){
   if(!url||typeof url!=="string")return null;
-  var m=url.match(/(?:youtu\.be\/|[?&]v=)([A-Za-z0-9_-]{11})/);
-  return m?m[1]:null;
+  // Primary: stop at query string to handle IDs with hyphens
+  var m=url.match(/youtu\.be\/([^?&]+)/);
+  if(m&&m[1].length>=11) return m[1].slice(0,11);
+  var m2=url.match(/[?&]v=([^&]{11})/);
+  if(m2) return m2[1];
+  return null;
 }
 
 function loadThumb(ytid,imgEl){
@@ -642,14 +625,16 @@ function buildResult(){
     fillList("archiveList",rx.archive,false);
 
     // 頓服薬曲 ORIGINAL
+    // ② 頭服藥曲は1曲のみ
     var origBlock=document.getElementById("origBlock");
     var origList=document.getElementById("origList");
     if(origBlock&&origList){
       origList.innerHTML="";
-      var shown={};
-      if(rx.original&&rx.original.t){origList.appendChild(makeTrackEl(rx.original,true));shown[rx.original.t]=1;}
-      if(trx.original&&trx.original.t&&!shown[trx.original.t])origList.appendChild(makeTrackEl(trx.original,true));
-      origBlock.style.display=origList.children.length>0?"block":"none";
+      var origTrack=null;
+      if(rx.original&&rx.original.t) origTrack=rx.original;
+      else if(trx.original&&trx.original.t) origTrack=trx.original;
+      if(origTrack) origList.appendChild(makeTrackEl(origTrack,true));
+      origBlock.style.display=origTrack?"block":"none";
     }
     if(fb)fb.style.display="none";
   }catch(err){
