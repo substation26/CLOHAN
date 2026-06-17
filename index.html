@@ -904,14 +904,16 @@ function wrapText(ctx, text, maxWidth) {
 // ── Get top song from result DOM ──
 function getTopSong() {
   var plist = document.getElementById('primaryList');
-  if (!plist) return { title: '', thumbUrl: null };
+  if (!plist) return { title: '', thumbUrl: null, songUrl: null };
   var firstRow = plist.querySelector('.track-row');
-  if (!firstRow) return { title: '', thumbUrl: null };
+  if (!firstRow) return { title: '', thumbUrl: null, songUrl: null };
   var titleEl = firstRow.querySelector('.track-title');
   var imgEl   = firstRow.querySelector('.track-thumb-img');
+  var linkEl  = firstRow.querySelector('.signal-link');
   var title   = titleEl ? titleEl.textContent : '';
   var thumbUrl= (imgEl && imgEl.src && imgEl.classList.contains('loaded')) ? imgEl.src : null;
-  return { title: title, thumbUrl: thumbUrl, imgEl: imgEl };
+  var songUrl = (linkEl && linkEl.href) ? linkEl.href : null;
+  return { title: title, thumbUrl: thumbUrl, imgEl: imgEl, songUrl: songUrl };
 }
 
 function showSharePreview() {
@@ -972,22 +974,39 @@ function closeShareOverlay() {
 // ── Web Share API (iOS Safari) + X fallback ──
 function shareToX() {
   var actionEl = document.getElementById('rxAction');
-  var clockEl  = document.getElementById('rxClockVal');
   var song     = getTopSong();
 
   var action    = actionEl ? actionEl.textContent : '\u51e6\u7f6e';
-  var clock     = clockEl  ? clockEl.textContent  : '';
   var songTitle = song.title || '';
-  var pageUrl   = window.location.href;
+  var songUrl   = song.songUrl || '';
+  var siteUrl   = 'https://substation26.github.io/CLOHAN/';
 
-  var shareText = '\ud83e\ude7a \u9ed1\u6591\u85e5\u66f2\n\n' +
-    action + '\u3092\u53d7\u9818\u3002\n\n' +
-    '\u4e3b\u51e6\u65b9\uff1a\n' + songTitle + '\n\n' +
-    '#CLOHAN #\u3061\u3085\u3093\u3059\u3068 #\u9ed1\u6591\u85e5\u66f2 #ForTUNESTOCK';
+  var lines = [
+    '\ud83e\ude7a \u9ed1\u6591\u85e5\u66f2',
+    '',
+    action + '\u3092\u53d7\u9818\u3002',
+    '',
+    '\u4e3b\u51e6\u65b9\uff1a',
+    songTitle,
+  ];
+  if (songUrl) {
+    lines.push('');
+    lines.push('\u25b6\ufe0e YouTube');
+    lines.push(songUrl);
+  }
+  lines.push('');
+  lines.push('\u25b6\ufe0e \u51e6\u65b9\u306f\u3053\u3061\u3089');
+  lines.push(siteUrl);
+  lines.push('');
+  lines.push('@ForTUNEStock_jp');
+  lines.push('#CLOHAN #\u3061\u3085\u3093\u3059\u3068 #\u9ed1\u6591\u85e5\u66f2 #ForTUNESTOCK');
+
+  var shareText = lines.join('\n');
+  var pageUrl = siteUrl;
 
   // Try Web Share API first (iOS/Android)
   if (navigator.share) {
-    var sharePayload = { title: '\u9ed1\u6591\u85e5\u66f2', text: shareText, url: pageUrl };
+    var sharePayload = { title: '\u9ed1\u6591\u85e5\u66f2', text: shareText };
 
     // If we have canvas blob, share with image
     if (window._shareCardDataUrl) {
@@ -995,7 +1014,7 @@ function shareToX() {
         .then(function(r){ return r.blob(); })
         .then(function(blob) {
           var file = new File([blob], 'yakkyoku-rx.png', { type: 'image/png' });
-          var payloadWithFile = { title: '\u9ed1\u6591\u85e5\u66f2', text: shareText, url: pageUrl, files: [file] };
+          var payloadWithFile = { title: '\u9ed1\u6591\u85e5\u66f2', text: shareText, files: [file] };
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
             return navigator.share(payloadWithFile);
           } else {
@@ -1009,7 +1028,7 @@ function shareToX() {
   } else {
     // Fallback: X intent URL
     var xUrl = 'https://twitter.com/intent/tweet?text=' +
-      encodeURIComponent(shareText) + '&url=' + encodeURIComponent(pageUrl);
+      encodeURIComponent(shareText);
     window.open(xUrl, '_blank', 'noopener,noreferrer');
   }
 }
